@@ -14,7 +14,7 @@
  * On any malloc errors, return NULL
  */
 Stack_head *stack_initialize() {
-  Stack_head * stack = malloc(sizeof(Stack_head));
+  Stack_head* stack = malloc(sizeof(Stack_head));
   if(stack == NULL){
     return NULL;
   }
@@ -41,8 +41,10 @@ void stack_destroy(Stack_head *head) {
     token_free(nodeToDelete->tok);
     node_free(nodeToDelete);
   }
+  free(head->top);
   head->top = NULL;
-  head->count =0;
+  free(head);
+  head = NULL;
   /* Implement this function */
 }
 

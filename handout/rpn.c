@@ -138,8 +138,9 @@ static int parse_token(Symtab *symtab, Stack_head *stack, Token *tok) {
   else if(tok->type == TYPE_PRINT){
     // Pop one token off the stack and print it to the screen as output.
     parse_token_type_print(symtab, stack);
+    token_free(tok);
+
   }
-  // token_free(tok);
 
   /* Implement This Function */
   return 0;
@@ -149,35 +150,39 @@ void parse_token_type_operator(Symtab *symtab, Stack_head* stack, Token* tok){
   // TYPE_OPERATOR = +,-,*,/
   Token* token2token = stack_pop(stack);
   Token* token1token = stack_pop(stack);
+  int token1 = token1token->value;
+  int token2 = token2token->value;
   if(token2token->type == TYPE_VARIABLE){
     Symbol* token2symbol = hash_get(symtab, token2token ->variable);
     token2token = token_create_value(token2symbol->val);
+    token2 = token2token->value;
+    symbol_free(token2symbol);
   }
   if(token1token->type == TYPE_VARIABLE){
     Symbol* token1symbol = hash_get(symtab, token1token ->variable);
     token1token = token_create_value(token1symbol->val);
+    token1 = token1token->value;
+    symbol_free(token1symbol);
   }
-  int token1 = token1token->value;
-  int token2 = token2token->value;
   int result = 0;
   switch(tok->oper) {
       case OPERATOR_PLUS:
         result = token1 + token2;
-        stack_push(stack, token_create_value(result));
         break;
       case OPERATOR_MINUS: 
         result = token1 - token2;
-        stack_push(stack, token_create_value(result));
         break;
       case OPERATOR_MULT: 
         result = token1 * token2;
-        stack_push(stack, token_create_value(result));
         break;
       case OPERATOR_DIV: 
         result = token1 / token2;
-        stack_push(stack, token_create_value(result));
         break;
   }
+  stack_push(stack, token_create_value(result));
+  token_free(token1token);
+  token_free(token2token);
+  token_free(tok);
 }
 
 void parse_token_type_print(Symtab *symtab, Stack_head* stack){
@@ -185,9 +190,10 @@ void parse_token_type_print(Symtab *symtab, Stack_head* stack){
   if(token->type == TYPE_VARIABLE){
     Symbol* tokenSymbol = hash_get(symtab, token ->variable);
     token = token_create_value(tokenSymbol->val);
-    printf("%d\n",token->value);
+    symbol_free(tokenSymbol);
   }
    print_step_output(token->value);
+   token_free(token);
 }
 
 int parse_token_type_assignment(Symtab *symtab, Stack_head* stack, Token* tok){
@@ -197,7 +203,13 @@ int parse_token_type_assignment(Symtab *symtab, Stack_head* stack, Token* tok){
     Symbol* tokenSymbol = hash_get(symtab, tok ->variable);
     tokenVariable = token_create_value(tokenSymbol->val);
   }
-  return hash_put(symtab, tokenVariable->variable, tokenValue -> value);
+  token_free(tok);
+  int inttokVal = tokenValue->value;
+  char chartokVar[MAX_LINE_LEN];
+  strncpy(chartokVar, tokenVariable->variable, MAX_LINE_LEN);
+  token_free(tokenVariable);
+  token_free(tokenValue);
+  return hash_put(symtab, chartokVar, inttokVal);
 }
 
 
