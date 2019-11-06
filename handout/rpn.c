@@ -139,7 +139,6 @@ static int parse_token(Symtab *symtab, Stack_head *stack, Token *tok) {
     // Pop one token off the stack and print it to the screen as output.
     parse_token_type_print(symtab, stack);
     token_free(tok);
-
   }
 
   /* Implement This Function */
@@ -154,15 +153,17 @@ void parse_token_type_operator(Symtab *symtab, Stack_head* stack, Token* tok){
   int token2 = token2token->value;
   if(token2token->type == TYPE_VARIABLE){
     Symbol* token2symbol = hash_get(symtab, token2token ->variable);
-    token2token = token_create_value(token2symbol->val);
-    token2 = token2token->value;
+    Token* placeHolderToken = token_create_value(token2symbol->val);
+    token2 = placeHolderToken->value;
     symbol_free(token2symbol);
+    token_free(placeHolderToken);
   }
   if(token1token->type == TYPE_VARIABLE){
     Symbol* token1symbol = hash_get(symtab, token1token ->variable);
-    token1token = token_create_value(token1symbol->val);
-    token1 = token1token->value;
+    Token* placeHolderToken = token_create_value(token1symbol->val);
+    token1 = placeHolderToken->value;
     symbol_free(token1symbol);
+    token_free(placeHolderToken);
   }
   int result = 0;
   switch(tok->oper) {
@@ -187,12 +188,15 @@ void parse_token_type_operator(Symtab *symtab, Stack_head* stack, Token* tok){
 
 void parse_token_type_print(Symtab *symtab, Stack_head* stack){
   Token* token = stack_pop(stack);
+  int tokenValue = token->value;
   if(token->type == TYPE_VARIABLE){
     Symbol* tokenSymbol = hash_get(symtab, token ->variable);
-    token = token_create_value(tokenSymbol->val);
+    Token* placeHolderToken = token_create_value(tokenSymbol->val);
+    tokenValue = placeHolderToken->value;
+    token_free(placeHolderToken);
     symbol_free(tokenSymbol);
   }
-   print_step_output(token->value);
+   print_step_output(tokenValue);
    token_free(token);
 }
 
@@ -202,6 +206,7 @@ int parse_token_type_assignment(Symtab *symtab, Stack_head* stack, Token* tok){
   if(tokenValue->type == TYPE_VARIABLE){
     Symbol* tokenSymbol = hash_get(symtab, tok ->variable);
     tokenVariable = token_create_value(tokenSymbol->val);
+    symbol_free(tokenSymbol);
   }
   token_free(tok);
   int inttokVal = tokenValue->value;

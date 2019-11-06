@@ -21,7 +21,7 @@ Symtab *hash_initialize() {
   if(symtab == NULL){
     return NULL;
   }
-  symtab->table = malloc(sizeof(Symbol) * HASH_TABLE_INITIAL);
+  symtab->table = malloc(sizeof(Symbol*) * HASH_TABLE_INITIAL);
   symtab->capacity = HASH_TABLE_INITIAL;
   for (int i = 0; i < HASH_TABLE_INITIAL; i++)
   {
@@ -210,7 +210,7 @@ void hash_rehash(Symtab *symtab, int new_capacity) {
   // Linked list at head
   free(symtab->table);
   symtab->table = NULL;
-  symtab->table = malloc(sizeof(Symbol) * new_capacity);
+  symtab->table = malloc(sizeof(Symbol*) * new_capacity);
   symtab->size = 0;
   symtab->capacity = new_capacity;
   for (int i = 0; i < new_capacity; i++)
