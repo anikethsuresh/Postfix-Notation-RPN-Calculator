@@ -22,6 +22,9 @@ Symtab *hash_initialize() {
     return NULL;
   }
   symtab->table = malloc(sizeof(Symbol*) * HASH_TABLE_INITIAL);
+  if(symtab->table == NULL){
+    return NULL;
+  }
   symtab->capacity = HASH_TABLE_INITIAL;
   for (int i = 0; i < HASH_TABLE_INITIAL; i++)
   {
@@ -95,15 +98,30 @@ int hash_put(Symtab *symtab, char *var, int val) {
   if(symtab == NULL){
     return -1;
   }
-  float load = (float)hash_get_size(symtab) / (float)hash_get_capacity(symtab);
-  if(load>=2.0){
-    hash_rehash(symtab,hash_get_capacity(symtab) * 2);
+  // Check if it exists
+  Symbol* checkIfExists = hash_get(symtab, var);
+  if(checkIfExists!=NULL){
+    // It Exists so change the value
+    int indexOfExisting = hash_code(var) % hash_get_capacity(symtab);
+    Symbol* current = symtab->table[indexOfExisting];
+    while(current != NULL){
+      if(strncmp(current->variable,var, strlen(var)) == 0){
+        current->val = val;
+        return 0;
+      }
+      current = current->next;
+    }
   }
+  // Doesn't exist
   Symbol* newSymbol = symbol_create(var, val);
   if(newSymbol == NULL){
     return -1;
   }
-  int index = hash_code(var) % symtab->capacity;
+  float load = (float)hash_get_size(symtab) / (float)hash_get_capacity(symtab);
+  if(load>=2.0){
+    hash_rehash(symtab,hash_get_capacity(symtab) * 2);
+  }
+  int index = hash_code(var) % hash_get_capacity(symtab);
   // Check if a Symbol is present at this index;
   if(symtab->table[index] == NULL){
     // Start a linked list here
@@ -114,11 +132,6 @@ int hash_put(Symtab *symtab, char *var, int val) {
     // Loop through the entire LL to search if Variable is already present
     Symbol* current = symtab->table[index];
     while(current != NULL){
-      if(strncmp(current->variable,var, strlen(var)) == 0){
-        // Varable is already present
-        current->val = val;
-        break;
-      }
       if(current->next == NULL){
         current -> next = newSymbol;
         symtab->size +=1;
@@ -142,7 +155,7 @@ Symbol *hash_get(Symtab *symtab, char *var) {
   if(symtab == NULL){
     return NULL;
   }
-  int index = hash_code(var) % symtab->capacity;
+  int index = hash_code(var) % hash_get_capacity(symtab);
   if(symtab->table[index] == NULL){
     // Not found
     return NULL;
@@ -184,47 +197,70 @@ void hash_rehash(Symtab *symtab, int new_capacity) {
   if(symtab == NULL){
     return;
   }
-  Symbol* current = NULL;
-  Symbol* head = NULL;
-  Symbol* walker = NULL;
-  Symbol* killer = NULL;
-  for (int i = 0; i < new_capacity/2; i++)
-  {
-    printf("%d\n", i);
-    walker = symtab->table[i];
-    while(walker!=NULL){
-      if(head == NULL){
-        current = symbol_copy(walker);
-        head = current;
-      }
-      else{
-        current->next = symbol_copy(walker);
-        current = current->next;
-        killer = walker;
-      }
-      killer = walker;
-      walker = walker->next;
-      symbol_free(killer);
-    }
-  }
-  // Linked list at head
-  free(symtab->table);
-  symtab->table = NULL;
+
+  Symbol** oldTable = symtab->table;
+  Symbol** toDelete = symtab->table;
   symtab->table = malloc(sizeof(Symbol*) * new_capacity);
-  symtab->size = 0;
-  symtab->capacity = new_capacity;
   for (int i = 0; i < new_capacity; i++)
   {
     symtab->table[i] =NULL;
   }
-  current = head;
-  while(current!=NULL){
-    hash_put(symtab, current->variable, current->val);
-    killer = current;
-    current = current->next;
-    symbol_free(killer);
+  symtab->size = 0;
+  symtab->capacity = new_capacity;
+
+  Symbol* walker = NULL;
+  Symbol* killer = NULL;
+
+  for (int i = 0; i < new_capacity/2; i++)
+  {
+    walker = oldTable[i];
+    while(walker!=NULL){
+      killer = walker;
+      walker = walker->next;
+      hash_put(symtab, killer->variable, killer->val);
+      symbol_free(killer);
+    }  
   }
+  free(toDelete);
+  toDelete = NULL;
   symbol_free(walker);
+  oldTable = NULL;
+  // for (int i = 0; i < new_capacity/2; i++)
+  // {
+  //   walker = symtab->table[i];
+  //   while(walker!=NULL){
+  //     if(head == NULL){
+  //       current = symbol_copy(walker);
+  //       head = current;
+  //     }
+  //     else{
+  //       current->next = symbol_copy(walker);
+  //       current = current->next;
+  //       killer = walker;
+  //     }
+  //     killer = walker;
+  //     walker = walker->next;
+  //     symbol_free(killer);
+  //   }
+  // }
+  // // Linked list at head
+  // free(symtab->table);
+  // symtab->table = NULL;
+  // symtab->table = malloc(sizeof(Symbol*) * new_capacity);
+  // symtab->size = 0;
+  // symtab->capacity = new_capacity;
+  // for (int i = 0; i < new_capacity; i++)
+  // {
+  //   symtab->table[i] =NULL;
+  // }
+  // current = head;
+  // while(current!=NULL){
+  //   hash_put(symtab, current->variable, current->val);
+  //   killer = current;
+  //   current = current->next;
+  //   symbol_free(killer);
+  // }
+  // symbol_free(walker);
 
   // free(originalTable);
   /* Implement this function */

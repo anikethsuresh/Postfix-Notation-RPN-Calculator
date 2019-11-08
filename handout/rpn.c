@@ -113,7 +113,7 @@ static int read_file(char *filename, char *line) {
  * If there are any memory errors, return -1.
  */
 static int parse_token(Symtab *symtab, Stack_head *stack, Token *tok) {
-  if(tok==NULL){
+  if(tok==NULL || symtab == NULL || stack == NULL){
     return -1;
   }
   if(tok->type == TYPE_VALUE){
